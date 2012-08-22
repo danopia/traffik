@@ -29,7 +29,7 @@ class TCP
           @cmds << [:timestamps, times[0], times[1]]
         else
           p packet[20..@header-1]
-          options = 0
+          options = ''
       end
     end
   end

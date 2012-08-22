@@ -24,6 +24,9 @@ while waiter.alive?
   packet = m.read(snarfed)
   
   packet = Ethernet.new(packet)
+  #packet = Radiotap.new(packet)
+  
+  p packet
 end
 
 `kill #{dumpcap.pid}`

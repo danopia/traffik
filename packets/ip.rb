@@ -3,7 +3,7 @@ require './packets/udp'
 
 class IP
   def initialize packet
-    raise 'invalid IP header' if packet.bytes.first != 0x45
+    raise "invalid IP header #{packet.bytes.first}" if packet.bytes.first != 0x45
     
     @length = packet[2, 2].unpack('v').first
     @ttl, @proto = packet[8, 2].unpack('CC')
