@@ -1,3 +1,4 @@
+require './packets/icmp'
 require './packets/tcp'
 require './packets/udp'
 
@@ -10,7 +11,9 @@ class IP
     @src = packet[12, 4].unpack('CCCC').join('.')
     @dest = packet[16, 4].unpack('CCCC').join('.')
     
-    if @proto == 6
+    if @proto == 1
+      @inner = ICMP.new packet[20..-1]
+    elsif @proto == 6
       @inner = TCP.new packet[20..-1]
     elsif @proto == 17
       @inner = UDP.new packet[20..-1]
