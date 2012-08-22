@@ -1,4 +1,5 @@
 require './packets/tcp'
+require './packets/udp'
 
 class IP
   def initialize packet
@@ -11,6 +12,8 @@ class IP
     
     if @proto == 6
       @inner = TCP.new packet[20..-1]
+    elsif @proto == 17
+      @inner = UDP.new packet[20..-1]
     else
       puts "IP protocol #{@proto} seen"
     end

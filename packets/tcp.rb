@@ -27,6 +27,9 @@ class TCP
         when 8
           times = options.slice!(0, 10)[2..-1].unpack('NN')
           @cmds << [:timestamps, times[0], times[1]]
+        else
+          p packet[20..@header-1]
+          options = 0
       end
     end
   end
