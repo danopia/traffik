@@ -1,6 +1,7 @@
-require 'pty'
-require 'open3'
-require 'io/console' # for IO#raw!
+#require 'pty'
+#require 'open3'
+#require 'io/console' # for IO#raw!
+#require 'profiler'
 
 #m, s = PTY.open
 #s.raw!
@@ -17,6 +18,9 @@ raise 'Wrong pcap version' if major != 2 || minor != 4
 
 #totals = Hash.new {|a,b|a[b]=0}
 waiter = Thread.new{ gets }
+#profiler = Rubinius::Profiler::Instrumenter.new
+t1=nil;t2=nil
+#profiler.profile do
 t1=Time.now
 while waiter.alive? && !m.eof?
   sec, usec, snarfed, length = m.read(16).unpack('VVVV')
@@ -37,6 +41,7 @@ while waiter.alive? && !m.eof?
   #p packet
 end
 t2=Time.now
+#end
 td = t2-t1
 bits=(91949361-24)*8
 p bits.to_f/td/1024/1024
