@@ -38,7 +38,7 @@ while waiter.alive? && !m.eof?
 end
 t2=Time.now
 td = t2-t1
-bits=(91949361-16)*8
+bits=(91949361-24)*8
 p bits.to_f/td/1024/1024
 #p totals
 

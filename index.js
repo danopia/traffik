@@ -5,7 +5,7 @@ var stream = fs.openSync('wiresharkXXXXAgq7V0', 'r');
 var gHeader = new Buffer(24);
 fs.readSync(stream, gHeader, 0, 24, 0);
 
-//t1=Time.now
+var t1=new Date();
 var offset = 24;
 try {
 while (1) {
@@ -30,7 +30,7 @@ while (1) {
 }
 } catch (e) { console.log(e); }
 
-//t2=Time.now
-//td = t2-t1
-//bits=(91949361-16)*8
-//p bits.to_f/td/1024/1024
+var t2=new Date();
+var td = t2-t1;
+var bits=(91949361-24)*8;
+console.log(bits/td/1024);
