@@ -6,8 +6,8 @@ class IP
     
     @length = packet[2, 2].unpack('v').first
     @ttl, @proto = packet[8, 2].unpack('CC')
-    @src = packet[12, 4]
-    @dest = packet[16, 4]
+    @src = packet[12, 4].unpack('CCCC').join('.')
+    @dest = packet[16, 4].unpack('CCCC').join('.')
     
     if @proto == 6
       @inner = TCP.new packet[20..-1]

@@ -2,8 +2,8 @@ require './packets/ip'
 
 class Ethernet
   def initialize packet
-    @dest = packet[0, 6]
-    @src = packet[6, 6]
+    @dest = packet[0, 6].unpack('H*').first
+    @src = packet[6, 6].unpack('H*').first
     @type = packet[12, 2].unpack('v').first
     
     if @type == 8 # IP
