@@ -1,7 +1,7 @@
 class IEEE
-  def self.run packet
-    type = packet.bytes.first
-    case type
+  def initialize packet
+    @type = packet.bytes.first
+    case @type
       when 0x08; #puts 'IEEE data'
         #p packet[32..-1]
       when 0x40; #puts 'IEEE probe request'
@@ -19,7 +19,7 @@ class IEEE
       when 0xC8; #puts 'IEEE QoS null function'
       when 0xD0; #puts 'IEEE action'
       when 0xD4; #puts 'IEEE acknowledgement'
-      else; puts type
+      else; puts @type
     end
   end
 end

@@ -23,7 +23,7 @@ while waiter.alive?
   sec, usec, snarfed, length = m.read(16).unpack('VVVV')
   packet = m.read(snarfed)
   
-  Ethernet.run packet
+  p Ethernet.new(packet)
 end
 
 `kill #{dumpcap.pid}`
