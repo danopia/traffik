@@ -9,6 +9,8 @@ connection.on('ready', function () {
       ports = {};
 
   setInterval(function () {
+    if (Object.keys(macs).length == 0) return;
+    
     connection.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
 
     macs  = {};
