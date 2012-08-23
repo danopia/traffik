@@ -34,7 +34,7 @@ waiter = Thread.new{ gets }
       buff << chunk;
       
       while (ss = buff.size) > 16 && ss > (len = buff.unpack('@8V').first+16) # unpack: reads one 32bit uint at position 8
-        if buffer.size > 600 || (Time.now - lastWork > 0.1)
+        if buffer.size > 60000 || (Time.now - lastWork > 0.1)
           i=(i.succ)%4
           streams[i].syswrite(buffer)
           buffer.replace buff[0, len]
