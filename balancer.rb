@@ -27,16 +27,18 @@ waiter = Thread.new{ gets }
   buff = ''
   buffer = ''
   chunk = ''.force_encoding('ASCII-8BIT')
+  lastWork = Time.now
   begin
     while waiter.alive?
       m.sysread(65535, chunk)
       buff << chunk;
       
       while (ss = buff.size) > 16 && ss > (len = buff.unpack('@8V').first+16) # unpack: reads one 32bit uint at position 8
-        if buffer.size > 600
+        if buffer.size > 600 || (Time.now - lastWork > 0.1)
           i=(i.succ)%4
           streams[i].syswrite(buffer)
           buffer.replace buff[0, len]
+          lastWork = Time.now
         else
           buffer << buff[0, len]
         end
