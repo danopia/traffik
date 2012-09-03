@@ -1,10 +1,14 @@
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+<script language="javascript" type="text/javascript" src="flot/jquery.js"></script>
+<script language="javascript" type="text/javascript" src="flot/jquery.flot.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
   var socket = io.connect();
   var max = 1;
   var txt = 0;
   var rxt = 0;
+  var rxs = [];
+  var txs = [];
+  var plot = {}
   socket.on('tally', function (data) {
     max = Math.max(Math.max(data.tx, data.rx), max);
     txt += data.tx;
@@ -14,6 +18,35 @@
     $('#txt').text(Math.round(txt/1024));
     $('#rxt').text(Math.round(rxt/1024));
     $('#max').text(max);
+    
+    rxs.push(data.rx);
+    txs.push(data.tx);
+    var res1 = [];
+    var res2 = [];
+    for (var i = rxs.length - 50; i < rxs.length; i++) {
+      res1.push([i + 50, rxs[i] || 0]);
+      res2.push([i + 50, txs[i] || 0]);
+      }
+    
+       /*plot.plot.setData([ res1, res2 ]);
+        // since the axes don't change, we don't need to call plot.setupGrid()
+        plot.plot.setupGrid();
+        plot.plot.draw();*/
+    var options = {
+        series: { shadowSize: 0 }, // drawing is faster without shadows
+        yaxis: { min: 0, max: max },
+        xaxis: { show: false }
+    };
+    plot.plot = $.plot($("#placeholder"), [res1,res2], options);
+  });
+  $(function() {
+  // setup plot
+    var options = {
+        series: { shadowSize: 0 }, // drawing is faster without shadows
+        yaxis: { min: 0, max: 10000 },
+        xaxis: { show: false }
+    };
+    plot.plot = $.plot($("#placeholder"), [ [[] ,[],[],[]], [[] ,[],[],[]]], options);
   });
 </script>
 
@@ -22,3 +55,4 @@
 <h2>RX (<span id="rxt"></span> KB)</h2>
 <div id="rx" style="background-color: green; height: 50px;"></div>
 <p>Fastest: <span id="max"></span></p>
+<div id="placeholder" style="width:600px;height:300px"></div>
