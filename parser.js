@@ -1,17 +1,80 @@
-var amqp = require('amqp');
+var amqp = require('amqp'),
+    conn = amqp.createConnection({ host: 'localhost' });
 
-var connection = amqp.createConnection({ host: 'localhost' });
+var macs  = {},
+    ips   = {},
+    ports = {};
 
-// Wait for connection to become established.
-connection.on('ready', function () {
-  var macs  = {},
-      ips   = {},
-      ports = {};
+var handleTCP = function (buffer, length) {
+  var src  = buffer.readUInt16BE(0);
+  ports[src ] = ports[src ] || [0,0];
+  ports[src ][0] += length;
+  
+  var dest = buffer.readUInt16BE(2);
+  ports[dest] = ports[dest] || [0,0];
+  ports[dest][1] += length;
+};
 
+var handleIP = function (buffer, length) {
+  var src  = buffer.slice(12, 16).toString('hex');
+  ips[src ] = ips[src ] || [0,0];
+  ips[src ][0] += length;
+  
+  var dest = buffer.slice(16, 20).toString('hex');
+  ips[dest] = ips[dest] || [0,0];
+  ips[dest][1] += length;
+  
+  var proto = buffer.readUInt8(9);
+  buffer = buffer.slice((buffer.readUInt8(0) & 0x0f) * 4);
+  
+  switch (proto) {
+  case 1:
+    console.log('Got ICMP packet');
+    break;
+    
+  case 6:
+    handleTCP(buffer, length);
+    break;
+    
+  case 17:
+    console.log('Got UDP packet');
+    break;
+  
+  default:
+    // http://www.networksorcery.com/enp/protocol/ip.htm
+    console.log('Got unknown IP protocol', proto);
+  };
+};
+
+var handleEther = function (buffer, length) {
+  var src  = buffer.slice( 0,  6).toString('hex');
+  macs[src ] = macs[src ] || [0,0];
+  macs[src ][0] += length;
+  
+  var dest = buffer.slice( 6, 12).toString('hex');
+  macs[dest] = macs[dest] || [0,0];
+  macs[dest][1] += length;
+
+  var proto = buffer.readUInt16BE(12);
+  buffer = buffer.slice(14);
+  
+  switch (proto) {
+  case 0x0800:
+    handleIP(buffer, length);
+    break;
+  
+  default:
+    // http://www.networksorcery.com/enp/protocol/802/ethertypes.htm
+    console.log('Got unknown ethertype:', proto.toString(16));
+  };
+};
+
+// Wait for AMQP connection to become established.
+conn.on('ready', function () {
   setInterval(function () {
     if (Object.keys(macs).length == 0) return;
     
-    connection.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    conn.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
 
     macs  = {};
     ips   = {};
@@ -19,17 +82,21 @@ connection.on('ready', function () {
   }, 100);
   
   process.stdin.resume();
-  process.stdin.on('data', function (data) {
-    var sec    = data.readUInt32LE( 0)/*,
-        usec   = data.readUInt32LE( 4),
-        caught = data.readUInt32LE( 8),
-        length = data.readUInt32LE(12)*/;
+  process.stdin.on('data', function (left) {
+    while (left.length) {
+      var sec    = left.readUInt32LE( 0),
+          usec   = left.readUInt32LE( 4),
+          caught = left.readUInt32LE( 8),
+          length = left.readUInt32LE(12);
 
-    macs[0] = sec;
+      var packet = left.slice(16, caught + 16);
+      handleEther(packet, length);
+      left = left.slice(caught + 16);
+    };
   });
   
   process.stdin.on('end', function () {
-    connection.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    conn.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
     process.exit(0);
   });
 });
