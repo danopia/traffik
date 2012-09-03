@@ -1,7 +1,10 @@
 var amqp = require('amqp'),
     conn = amqp.createConnection({host: 'localhost'});
 
-var macs  = {},
+var tx    = 0,
+    rx    = 0,
+    
+    macs  = {},
     ips   = {},
     ports = {};
 
@@ -76,7 +79,7 @@ conn.on('ready', function () {
   setInterval(function () {
     if (Object.keys(macs).length == 0) return;
     
-    exchange.publish('raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    exchange.publish('raw', JSON.stringify({tx: tx, rx: rx, macs: macs, ips: ips, ports: ports}));
 
     macs  = {};
     ips   = {};
@@ -98,7 +101,7 @@ conn.on('ready', function () {
   });
   
   process.stdin.on('end', function () {
-    exchange.publish('raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    exchange.publish('raw', JSON.stringify({tx: tx, rx: rx, macs: macs, ips: ips, ports: ports}));
     process.exit(0);
   });
 });
