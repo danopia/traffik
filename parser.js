@@ -9,7 +9,7 @@ var tx    = 0,
     ports = {},
     
     cache = {},
-    intra = '10.42';
+    intra = process.argv[2];
 
 var decToHex = function (byte) {
   if (byte < 16)

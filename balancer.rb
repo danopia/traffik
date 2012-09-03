@@ -5,8 +5,11 @@ require 'io/console' # for IO#raw!
 $logsrc = Open3.popen2('node', 'log.js', 'source', 'balancer')[0]
 def log line, src=nil; $logsrc.puts [line, src, Time.now.strftime('%H:%M:%S')].join("\t"); end
 
+ip, bits = `ip addr show scope global`.match(/((?:[0-9]+\.){3}[0-9]+)\/([0-9]+)/).captures
+intra = ip.split('.')[0, bits.to_i / 8].join('.')
+
 workers = 4.times.map do |i|
-  proc = Open3.popen2("node", "parser.js")
+  proc = Open3.popen2('node', 'parser.js', intra)
   Thread.new do
     while line = proc[1].gets
       log line.chomp, "worker.#{i+1}"
