@@ -2,8 +2,8 @@ require 'pty'
 require 'open3'
 require 'io/console' # for IO#raw!
 
-$logsrc = Open3.popen2("node", "log.js", "source")[0]
-def log line, src='balancer'; $logsrc.puts [Time.now.strftime('%H:%M:%S'), src, line].join("\t"); end
+$logsrc = Open3.popen2('node', 'log.js', 'source', 'balancer')[0]
+def log line, src=nil; $logsrc.puts [line, src, Time.now.strftime('%H:%M:%S')].join("\t"); end
 
 workers = 4.times.map do |i|
   proc = Open3.popen2("node", "parser.js")

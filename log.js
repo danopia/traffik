@@ -10,9 +10,9 @@ conn.on('ready', function () {
     process.stdin.on('data', function (line) {
       var parts = line.trim().split('\t');
       exchange.publish('log', JSON.stringify({
-        timestamp: parts[0],
-        source: parts[1],
-        message: parts[2]
+        timestamp: parts[2],
+        source: (parts[1] && parts[1].length) ? parts[1] : process.argv[3],
+        message: parts[0]
       }));
     });
     
