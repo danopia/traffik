@@ -2,13 +2,14 @@ require 'pty'
 require 'open3'
 require 'io/console' # for IO#raw!
 
-def log line, src='balancer'; puts "#{Time.now.strftime '%H:%M:%S'} [#{src}] #{line}"; end
+$logsrc = Open3.popen2("node", "log.js", "source")[0]
+def log line, src='balancer'; $logsrc.puts [Time.now.strftime('%H:%M:%S'), src, line].join("\t"); end
 
 workers = 4.times.map do |i|
   proc = Open3.popen2("node", "parser.js")
   Thread.new do
     while line = proc[1].gets
-      log line.strip, "worker.#{i+1}"
+      log line.chomp, "worker.#{i+1}"
     end
   end
   proc
@@ -30,7 +31,7 @@ magic, major, minor, thiszone, sigfigs, snaplen, network = m.sysread(24).unpack(
 raise 'Bad magic' if magic != 2712847316
 raise 'Wrong pcap version' if major != 2 || minor != 4
 
-log 'Ready for action'
+log 'All systems go'
 
 buff = ''
 buffer = ''
@@ -63,3 +64,5 @@ streams.each(&:close)
 `kill #{dumpcap.pid}`
 puts stdout.gets.strip
 puts stdout.gets.strip
+
+$logsrc.close
