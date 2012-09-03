@@ -6,7 +6,18 @@ var tx    = 0,
     
     macs  = {},
     ips   = {},
-    ports = {};
+    ports = {},
+    
+    cache = {},
+    intra = '10.42';
+
+var decToHex = function (byte) {
+  if (byte < 16)
+    return '0' + Number(byte).toString(16);
+  else
+    return Number(byte).toString(16);
+}
+intra = intra.split('.').map(decToHex).join('');
 
 var handleTCP = function (buffer, length) {
   var src  = buffer.readUInt16BE(0);
@@ -18,7 +29,7 @@ var handleTCP = function (buffer, length) {
   ports[dest][1] += length;
 };
 
-var handleIP = function (buffer, length) {
+var handleIP = function (buffer, length, srcMac, destMac) {
   var src  = buffer.slice(12, 16).toString('hex');
   ips[src ] = ips[src ] || [0,0];
   ips[src ][0] += length;
@@ -26,6 +37,11 @@ var handleIP = function (buffer, length) {
   var dest = buffer.slice(16, 20).toString('hex');
   ips[dest] = ips[dest] || [0,0];
   ips[dest][1] += length;
+  
+  if      (cache[srcMac ] === undefined &&  src.indexOf(intra) === 0)
+    cache[destMac] = !(cache[srcMac ] = true);
+  else if (cache[destMac] === undefined && dest.indexOf(intra) === 0)
+    cache[srcMac ] = !(cache[destMac] = true);
   
   var proto = buffer.readUInt8(9);
   buffer = buffer.slice((buffer.readUInt8(0) & 0x0f) * 4);
@@ -57,19 +73,29 @@ var handleEther = function (buffer, length) {
   var dest = buffer.slice( 6, 12).toString('hex');
   macs[dest] = macs[dest] || [0,0];
   macs[dest][1] += length;
+  
+  if (cache[src] !== undefined && cache[dest] === undefined)
+    cache[dest] = !cache[src ];
+  else if (cache[src] === undefined && cache[dest] !== undefined)
+    cache[src ] = !cache[dest];
 
   var proto = buffer.readUInt16BE(12);
   buffer = buffer.slice(14);
   
   switch (proto) {
   case 0x0800:
-    handleIP(buffer, length);
+    handleIP(buffer, length, src, dest);
     break;
   
   default:
     // http://www.networksorcery.com/enp/protocol/802/ethertypes.htm
     console.log('Got unknown ethertype:', proto.toString(16));
   };
+  
+  if (cache[src])
+    tx += length;
+  else if (cache[dest])
+    rx += length;
 };
 
 // Wait for AMQP connection to become established.
@@ -79,11 +105,14 @@ conn.on('ready', function () {
   setInterval(function () {
     if (Object.keys(macs).length == 0) return;
     
-    exchange.publish('raw', JSON.stringify({tx: tx, rx: rx, macs: macs, ips: ips, ports: ports}));
+    exchange.publish('raw', JSON.stringify({tx: tx, rx: rx, macs: macs, ips: ips, ports: ports, cache: cache.length}));
 
     macs  = {};
     ips   = {};
     ports = {};
+    
+    tx    = 0;
+    rx    = 0;
   }, 100);
   
   process.stdin.resume();
