@@ -1,5 +1,5 @@
 var amqp = require('amqp'),
-    conn = amqp.createConnection({ host: 'localhost' });
+    conn = amqp.createConnection({host: 'localhost'});
 
 var macs  = {},
     ips   = {},
@@ -71,10 +71,12 @@ var handleEther = function (buffer, length) {
 
 // Wait for AMQP connection to become established.
 conn.on('ready', function () {
+  var exchange = conn.exchange('traffik');
+  
   setInterval(function () {
     if (Object.keys(macs).length == 0) return;
     
-    conn.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    exchange.publish('raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
 
     macs  = {};
     ips   = {};
@@ -96,7 +98,7 @@ conn.on('ready', function () {
   });
   
   process.stdin.on('end', function () {
-    conn.publish('traffik.raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
+    exchange.publish('raw', JSON.stringify({macs: macs, ips: ips, ports: ports}));
     process.exit(0);
   });
 });
