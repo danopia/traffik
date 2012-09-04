@@ -13,8 +13,6 @@ conn.on('ready', function () {
   
   exchange.on('open', function () {
     setInterval(function () {
-      if (Object.keys(macs).length == 0) return;
-      
       exchange.publish('tally', JSON.stringify({tx: tx, rx: rx, macs: macs, ips: ips, ports: ports}));
 
       macs  = {};
