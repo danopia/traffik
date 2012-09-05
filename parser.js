@@ -19,7 +19,7 @@ var decToHex = function (byte) {
 }
 intra = intra.split('.').map(decToHex).join('');
 
-var handleTCP = function (buffer, length) {
+var handleTCPUDP = function (buffer, length, proto) {
   var src  = buffer.readUInt16BE(0);
   ports[src ] = ports[src ] || [0,0];
   ports[src ][0] += length;
@@ -52,11 +52,11 @@ var handleIP = function (buffer, length, srcMac, destMac) {
     break;
     
   case 6:
-    handleTCP(buffer, length);
+    handleTCPUDP(buffer, length, 'TCP');
     break;
     
   case 17:
-    console.log('Got UDP packet');
+    handleTCPUDP(buffer, length, 'UDP');
     break;
   
   default:
