@@ -5,8 +5,14 @@ require 'io/console' # for IO#raw!
 $logsrc = Open3.popen2('node', 'log.js', 'source', 'balancer')[0]
 def log line, src=nil; $logsrc.puts [line, src, Time.now.strftime('%H:%M:%S')].join("\t"); end
 
-ip, bits = `ip addr show scope global`.match(/((?:[0-9]+\.){3}[0-9]+)\/([0-9]+)/).captures
-intra = ip.split('.')[0, bits.to_i / 8].join('.')
+match = `ip addr show scope global`.match(/((?:[0-9]+\.){3}[0-9]+)\/([0-9]+)/)
+intra = if match
+  ip, bits = match.captures
+  ip.split('.')[0, bits.to_i / 8].join('.')
+else
+  log 'Unable to determine the intranet range'
+  '0.0.0.0'
+end
 
 workers = 4.times.map do |i|
   proc = Open3.popen2('node', 'parser.js', intra)
@@ -61,6 +67,7 @@ begin
     end
   end
 rescue EOFError
+  puts 'End of Feed'
 end
 
 streams.each(&:close)
