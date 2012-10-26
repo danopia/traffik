@@ -26,7 +26,8 @@ conn.on('ready', function () {
         console.log('Ready for action');
         
         queue.subscribe(function (message) {
-          console.log(JSON.parse(message.data.toString('utf8')));
+          var data = JSON.parse(message.data.toString('utf8'));
+          console.log('[' + data.timestamp + ']', '<' + data.source + '>', data.message);
         });
       });
     });
