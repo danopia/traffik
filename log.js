@@ -8,12 +8,15 @@ conn.on('ready', function () {
     process.stdin.resume();
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', function (line) {
-      var parts = line.trim().split('\t');
-      exchange.publish('log', JSON.stringify({
-        timestamp: parts[2],
-        source: (parts[1] && parts[1].length) ? parts[1] : process.argv[3],
-        message: parts[0]
-      }));
+      var lines = line.split('\n');
+      for (var i = 0; i < lines.length - 1; i++) {
+        var parts = lines[i].trim().split('\t');
+        exchange.publish('log', JSON.stringify({
+          timestamp: parts[2],
+          source: (parts[1] && parts[1].length) ? parts[1] : process.argv[3],
+          message: parts[0]
+        }));
+      };
     });
     
     process.stdin.on('end', function () {
