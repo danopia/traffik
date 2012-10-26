@@ -33,7 +33,7 @@ stdout.gets # wait for file to be opened
 s.close
 
 i = -1
-waiter = Thread.new { gets }
+waiter = Thread.new { STDIN.gets }
 
 magic, major, minor, thiszone, sigfigs, snaplen, network = m.sysread(24).unpack('VvvVVVV')
 
