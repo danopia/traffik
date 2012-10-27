@@ -28,8 +28,8 @@ streams = workers.map(&:first)
 
 m, s = PTY.open
 s.raw!
-stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "wlan0", "-q", "-p", "-w", s.path)
-stdout.gets # wait for file to be opened
+stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "wlan0", "-q", "-p", "-P", "-w", s.path)
+stdout.gets; stdout.gets # wait for file to be opened
 s.close
 
 i = -1
