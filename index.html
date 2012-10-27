@@ -23,9 +23,9 @@
     txs.push(data.tx);
     var res1 = [];
     var res2 = [];
-    for (var i = rxs.length - 100; i < rxs.length; i++) {
-      res1.push([i + 100, rxs[i] || 0]);
-      res2.push([i + 100, txs[i] || 0]);
+    for (var i = rxs.length - 1000; i < rxs.length; i++) {
+      res1.push([i + 1000, rxs[i] || 0]);
+      res2.push([i + 1000, txs[i] || 0]);
       }
     
        /*plot.plot.setData([ res1, res2 ]);

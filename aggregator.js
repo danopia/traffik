@@ -21,7 +21,7 @@ conn.on('ready', function () {
       
       tx    = 0;
       rx    = 0;
-    }, 250);
+    }, 100);
     
     conn.queue('traffik aggregator', {autoDelete: false}, function (queue) {
       queue.bind(exchange, 'raw');
