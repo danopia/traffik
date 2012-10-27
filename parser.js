@@ -29,6 +29,45 @@ var handleTCPUDP = function (buffer, length, proto) {
   ports[dest][1] += length;
 };
 
+var handleARP = function (buffer, length, srcMac, destMac) { // src is ff.., dest is 00..
+  if (buffer.readUInt16BE(0) != 0x0001)
+    return console.log('Got non-Ethernet ARP packet -', buffer.readUInt16BE(0));
+    
+  if (buffer.readUInt16BE(2) != 0x0800)
+    return console.log('Got non-IP ARP packet -', buffer.readUInt16BE(2));
+  
+  var macLen = buffer.readUInt8(4),
+      ipLen  = buffer.readUInt8(5);
+  
+  if (macLen != 6 || ipLen != 4)
+    return console.log('wtf mate', macLen, ipLen);
+    
+  var srcMac  = buffer.slice(8,  14).toString('hex');
+  var srcIp   = buffer.slice(14, 18).toString('hex');
+  ips[srcIp ] = ips[srcIp ] || [0,0];
+  ips[srcIp ][0] += length;
+  
+  var destMac = buffer.slice(18, 24).toString('hex');
+  var destIp  = buffer.slice(24, 28).toString('hex');
+  ips[destIp] = ips[destIp] || [0,0];
+  ips[destIp][1] += length;
+    
+  var opCode = buffer.readUInt16BE(6);
+  
+  switch (opCode) {
+  case 1:
+    //console.log('ARP request', 'from', srcMac, srcIp, 'to', destMac, destIp);
+    break;
+    
+  case 2:
+    console.log('ARP response', 'from', srcMac, srcIp, 'to', destMac, destIp);
+    break;
+  
+  default:
+    console.log('Got', length, 'length ARP packet', opCode);
+  };
+};
+
 var handleIP = function (buffer, length, srcMac, destMac) {
   var src  = buffer.slice(12, 16).toString('hex');
   ips[src ] = ips[src ] || [0,0];
@@ -87,6 +126,10 @@ var handleEther = function (buffer, length) {
     handleIP(buffer, length, src, dest);
     break;
   
+  case 0x0806:
+    handleARP(buffer, length, src, dest);
+    break;
+    
   default:
     // http://www.networksorcery.com/enp/protocol/802/ethertypes.htm
     console.log('Got unknown ethertype:', proto.toString(16));
@@ -123,6 +166,7 @@ conn.on('ready', function () {
           caught = left.readUInt32LE( 8),
           length = left.readUInt32LE(12);
 
+      if (caught + 16 > left.length) { console.log('Not enough packet'); }
       var packet = left.slice(16, caught + 16);
       handleEther(packet, length);
       left = left.slice(caught + 16);
