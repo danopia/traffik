@@ -68,7 +68,27 @@ var handleARP = function (buffer, length, srcMac, destMac) { // src is ff.., des
   };
 };
 
-var handleIP = function (buffer, length, srcMac, destMac) {
+var handleIP = function (proto, buffer, length, version) {
+  switch (proto) {
+  case 1:
+    console.log('Got ICMP' + version, 'packet');
+    break;
+    
+  case 6:
+    handleTCPUDP(buffer, length, 'TCP' + version);
+    break;
+    
+  case 17:
+    handleTCPUDP(buffer, length, 'UDP' + version);
+    break;
+  
+  default:
+    // http://www.networksorcery.com/enp/protocol/ip.htm
+    console.log('Got unknown IP' + version, 'protocol', proto);
+  };
+};
+
+var handleIPv4 = function (buffer, length, srcMac, destMac) {
   var src  = buffer.slice(12, 16).toString('hex');
   ips[src ] = ips[src ] || [0,0];
   ips[src ][0] += length;
@@ -85,23 +105,24 @@ var handleIP = function (buffer, length, srcMac, destMac) {
   var proto = buffer.readUInt8(9);
   buffer = buffer.slice((buffer.readUInt8(0) & 0x0f) * 4);
   
-  switch (proto) {
-  case 1:
-    console.log('Got ICMP packet');
-    break;
-    
-  case 6:
-    handleTCPUDP(buffer, length, 'TCP');
-    break;
-    
-  case 17:
-    handleTCPUDP(buffer, length, 'UDP');
-    break;
+  handleIP(proto, buffer, length, 'v4');
+};
+
+var handleIPv6 = function (buffer, length, srcMac, destMac) {
+  var src  = buffer.slice(8, 24).toString('hex');
+  ips[src ] = ips[src ] || [0,0];
+  ips[src ][0] += length;
   
-  default:
-    // http://www.networksorcery.com/enp/protocol/ip.htm
-    console.log('Got unknown IP protocol', proto);
-  };
+  var dest = buffer.slice(24, 40).toString('hex');
+  ips[dest] = ips[dest] || [0,0];
+  ips[dest][1] += length;
+  
+  //if      (cache[srcMac ] === undefined &&  src.indexOf(intra) === 0)
+  //  cache[destMac] = !(cache[srcMac ] = true);
+  //else if (cache[destMac] === undefined && dest.indexOf(intra) === 0)
+  //  cache[srcMac ] = !(cache[destMac] = true);
+  
+  handleIP(buffer.readUInt8(6), buffer.slice(16), length, 'v6');
 };
 
 var handleEther = function (buffer, length) {
@@ -123,11 +144,15 @@ var handleEther = function (buffer, length) {
   
   switch (proto) {
   case 0x0800:
-    handleIP(buffer, length, src, dest);
+    handleIPv4(buffer, length, src, dest);
     break;
   
   case 0x0806:
     handleARP(buffer, length, src, dest);
+    break;
+    
+  case 0x86DD:
+    handleIPv6(buffer, length, src, dest);
     break;
     
   default:
