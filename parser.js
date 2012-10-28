@@ -29,6 +29,28 @@ var handleTCPUDP = function (buffer, length, proto) {
   ports[dest][1] += length;
 };
 
+// http://tools.ietf.org/html/rfc2236
+var handleIGMP = function (buffer, length, version) {
+  var type = buffer.readUInt8(0);
+  switch (type) {
+  
+  case 0x11:
+    console.log('IGMP' + version, 'membership query for', buffer.slice(4, 8).toString('hex'));
+    break;
+  
+  case 0x16:
+    console.log('IGMP' + version, 'Version 2 Membership Report for', buffer.slice(4, 8).toString('hex'));
+    break;
+  
+  case 0x17:
+    console.log('IGMP' + version, 'leave group request for', buffer.slice(4, 8).toString('hex'));
+    break;
+  
+  default:
+    console.log('Unknown IGMP' + version, 'packet type', type, buffer.length, buffer);
+  };
+};
+
 var handleARP = function (buffer, length, srcMac, destMac) { // src is ff.., dest is 00..
   if (buffer.readUInt16BE(0) != 0x0001)
     return console.log('Got non-Ethernet ARP packet -', buffer.readUInt16BE(0));
@@ -64,14 +86,18 @@ var handleARP = function (buffer, length, srcMac, destMac) { // src is ff.., des
     break;
   
   default:
-    console.log('Got', length, 'length ARP packet', opCode);
+    console.log('Got', length, 'length ARP packet', opCode, buffer.length, buffer);
   };
 };
 
 var handleIP = function (proto, buffer, length, version) {
   switch (proto) {
   case 1:
-    console.log('Got ICMP' + version, 'packet');
+    console.log('Got ICMP' + version, 'packet', buffer.length, buffer);
+    break;
+    
+  case 2:
+    handleIGMP(buffer, length, version);
     break;
     
   case 6:
@@ -81,10 +107,15 @@ var handleIP = function (proto, buffer, length, version) {
   case 17:
     handleTCPUDP(buffer, length, 'UDP' + version);
     break;
+    
+  case 44: // IPv6 fragment
+    proto = buffer.readUInt8(0);
+    offset = (buffer.readUInt16BE(2) >> 3) * 8;
+    
   
   default:
     // http://www.networksorcery.com/enp/protocol/ip.htm
-    console.log('Got unknown IP' + version, 'protocol', proto);
+    console.log('Got unknown IP' + version, 'protocol', proto, buffer.length, buffer);
   };
 };
 
@@ -122,7 +153,7 @@ var handleIPv6 = function (buffer, length, srcMac, destMac) {
   //else if (cache[destMac] === undefined && dest.indexOf(intra) === 0)
   //  cache[srcMac ] = !(cache[destMac] = true);
   
-  handleIP(buffer.readUInt8(6), buffer.slice(16), length, 'v6');
+  handleIP(buffer.readUInt8(6), buffer.slice(40), length, 'v6');
 };
 
 var handleEther = function (buffer, length) {
@@ -157,7 +188,7 @@ var handleEther = function (buffer, length) {
     
   default:
     // http://www.networksorcery.com/enp/protocol/802/ethertypes.htm
-    console.log('Got unknown ethertype:', proto.toString(16));
+    console.log('Got unknown ethertype:', proto.toString(16), buffer.length, buffer);
   };
   
   if (cache[src])
