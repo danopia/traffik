@@ -184,18 +184,23 @@ conn.on('ready', function () {
   }, 100);
   
   process.stdin.resume();
+  var last = new Buffer(0);
   process.stdin.on('data', function (left) {
+    if (last.length) left = Buffer.concat([last, left]);
+    
     while (left.length) {
       var sec    = left.readUInt32LE( 0),
           usec   = left.readUInt32LE( 4),
           caught = left.readUInt32LE( 8),
           length = left.readUInt32LE(12);
 
-      if (caught + 16 > left.length) { console.log('Not enough packet'); }
+      if (caught + 16 > left.length) { console.log('Not enough packet'); break; }
       var packet = left.slice(16, caught + 16);
       handleEther(packet, length);
       left = left.slice(caught + 16);
     };
+    
+    last = left;
   });
   
   process.stdin.on('end', function () {
