@@ -16,8 +16,7 @@ magic, major, minor, thiszone, sigfigs, snaplen, network = m.read(24).unpack('Vv
 raise 'Bad magic' if magic != 2712847316
 raise 'Wrong pcap version' if major != 2 || minor != 4
 
-waiter = Thread.new{ gets }
-while waiter.alive? && !m.eof?
+while !m.eof?
   sec, usec, snarfed, length = m.read(16).unpack('VVVV')
   packet = m.read(snarfed)
   
