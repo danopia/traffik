@@ -7,7 +7,7 @@ require './packets/ethernet'
 
 m, s = PTY.open
 s.raw!
-stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "vpn0", "-P", "-q", "-p", "-w", s.path) # added -P
+stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "wlan0", "-P", "-q", "-p", "-w", s.path) # added -P
 stdout.gets # wait for file to be opened
 #s.close
 
