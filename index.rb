@@ -5,13 +5,11 @@ require 'io/console' # for IO#raw!
 require './packets/radiotap'
 require './packets/ethernet'
 
-#m, s = PTY.open
-#s.raw!
-#stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "wlan0", "-q", "-p", "-w", s.path)
-#stdout.gets # wait for file to be opened
+m, s = PTY.open
+s.raw!
+stdin, stdout, dumpcap = Open3.popen2e("dumpcap", "-i", ARGV[0] || "vpn0", "-P", "-q", "-p", "-w", s.path) # added -P
+stdout.gets # wait for file to be opened
 #s.close
-
-m = File.open('wiresharkXXXXAgq7V0', 'r')
 
 magic, major, minor, thiszone, sigfigs, snaplen, network = m.read(24).unpack('VvvVVVV')
 
@@ -29,6 +27,6 @@ while waiter.alive? && !m.eof?
   p packet
 end
 
-#`kill #{dumpcap.pid}`
-#puts stdout.gets.strip
-#puts stdout.gets.strip
+`kill #{dumpcap.pid}`
+puts stdout.gets.strip
+puts stdout.gets.strip
